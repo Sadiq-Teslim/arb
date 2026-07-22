@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import {
   AiChat02Icon,
   AiSearchIcon,
@@ -248,7 +250,7 @@ function ChatBubble({ message }: { message: Message }) {
             Safe mode
           </div>
         )}
-        <FormattedText text={message.text} />
+        <MarkdownMessage text={message.text} mine={mine} />
         {message.papers && message.papers.length > 0 && (
           <div className="mt-3 grid gap-2">
             {message.papers.map((paper) => (
@@ -273,58 +275,46 @@ function ChatBubble({ message }: { message: Message }) {
   );
 }
 
-function FormattedText({ text }: { text: string }) {
-  const blocks = text.split(/\n{2,}/).map((block) => block.trim()).filter(Boolean);
-  if (!blocks.length) return <p>I do not have an answer for that yet.</p>;
-
+function MarkdownMessage({ text, mine }: { text: string; mine: boolean }) {
+  const content = text.trim() || 'I do not have an answer for that yet.';
   return (
-    <div className="space-y-3">
-      {blocks.map((block, index) => {
-        const lines = block.split('\n').map((line) => line.trim()).filter(Boolean);
-        const bulletLines = lines.filter((line) => /^[-*]\s+/.test(line));
-        const numberLines = lines.filter((line) => /^\d+[.)]\s+/.test(line));
-
-        if (bulletLines.length === lines.length) {
-          return (
-            <ul key={index} className="list-disc space-y-1 pl-5">
-              {lines.map((line, itemIndex) => (
-                <li key={itemIndex}>{renderInline(line.replace(/^[-*]\s+/, ''))}</li>
-              ))}
-            </ul>
-          );
-        }
-
-        if (numberLines.length === lines.length) {
-          return (
-            <ol key={index} className="list-decimal space-y-1 pl-5">
-              {lines.map((line, itemIndex) => (
-                <li key={itemIndex}>{renderInline(line.replace(/^\d+[.)]\s+/, ''))}</li>
-              ))}
-            </ol>
-          );
-        }
-
-        return (
-          <p key={index} className="whitespace-pre-line">
-            {renderInline(block)}
-          </p>
-        );
-      })}
-    </div>
+    <ReactMarkdown
+      remarkPlugins={[remarkGfm]}
+      components={{
+        h1: ({ children }) => <h1 className="mb-2 mt-1 text-lg font-black leading-snug">{children}</h1>,
+        h2: ({ children }) => <h2 className="mb-2 mt-1 text-base font-black leading-snug">{children}</h2>,
+        h3: ({ children }) => <h3 className="mb-1.5 mt-1 text-sm font-bold leading-snug">{children}</h3>,
+        p: ({ children }) => <p className="my-2 first:mt-0 last:mb-0">{children}</p>,
+        ul: ({ children }) => <ul className="my-2 list-disc space-y-1 pl-5">{children}</ul>,
+        ol: ({ children }) => <ol className="my-2 list-decimal space-y-1 pl-5">{children}</ol>,
+        li: ({ children }) => <li className="pl-1">{children}</li>,
+        strong: ({ children }) => <strong className="font-bold">{children}</strong>,
+        em: ({ children }) => <em className="italic">{children}</em>,
+        code: ({ children }) => (
+          <code className={`rounded px-1 py-0.5 text-[0.92em] ${mine ? 'bg-white/10 text-amber-100' : 'bg-slate-100 text-slate-800'}`}>
+            {children}
+          </code>
+        ),
+        pre: ({ children }) => (
+          <pre className={`my-3 overflow-x-auto rounded-xl p-3 text-xs leading-5 ${mine ? 'bg-white/10 text-white' : 'bg-slate-100 text-slate-800'}`}>
+            {children}
+          </pre>
+        ),
+        blockquote: ({ children }) => (
+          <blockquote className={`my-3 border-l-4 pl-3 ${mine ? 'border-amber-200 text-slate-100' : 'border-amber-300 text-slate-600'}`}>
+            {children}
+          </blockquote>
+        ),
+        a: ({ href, children }) => (
+          <a href={href} target="_blank" rel="noreferrer" className={`font-semibold underline underline-offset-2 ${mine ? 'text-amber-100' : 'text-brand-700'}`}>
+            {children}
+          </a>
+        ),
+      }}
+    >
+      {content}
+    </ReactMarkdown>
   );
-}
-
-function renderInline(text: string) {
-  const parts = text.split(/(\*\*[^*]+\*\*|`[^`]+`)/g);
-  return parts.map((part, index) => {
-    if (part.startsWith('**') && part.endsWith('**')) {
-      return <strong key={index}>{part.slice(2, -2)}</strong>;
-    }
-    if (part.startsWith('`') && part.endsWith('`')) {
-      return <code key={index} className="rounded bg-slate-100 px-1 py-0.5 text-[0.92em] text-slate-800">{part.slice(1, -1)}</code>;
-    }
-    return <span key={index}>{part}</span>;
-  });
 }
 
 function InfoCard({ icon, title, text }: { icon: any; title: string; text: string }) {
