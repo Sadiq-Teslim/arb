@@ -83,6 +83,7 @@ export default function AssistantPage() {
   }, [messages, busy]);
 
   const totalAvailable = libraryPreview.length;
+  const hasStartedChat = messages.some((message) => message.role === 'user');
   const shellTitle = user ? 'Ask Engr. Ada Torque' : 'ResearchHub Assistant';
   const shellSubtitle = user
     ? 'Search the hub, plan your submission, and get navigation help from the ResearchHub assistant.'
@@ -176,17 +177,19 @@ export default function AssistantPage() {
           </div>
 
           <div className="border-t border-slate-100 bg-white p-4">
-            <div className="mb-3 flex flex-wrap gap-2">
-              {STARTERS.map((starter) => (
-                <button
-                  key={starter}
-                  onClick={() => send(starter)}
-                  className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:border-amber-300 hover:bg-amber-50"
-                >
-                  {starter}
-                </button>
-              ))}
-            </div>
+            {!hasStartedChat && (
+              <div className="mb-3 flex flex-wrap gap-2">
+                {STARTERS.map((starter) => (
+                  <button
+                    key={starter}
+                    onClick={() => send(starter)}
+                    className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:border-amber-300 hover:bg-amber-50"
+                  >
+                    {starter}
+                  </button>
+                ))}
+              </div>
+            )}
             <form
               className="flex gap-2"
               onSubmit={(event) => {
